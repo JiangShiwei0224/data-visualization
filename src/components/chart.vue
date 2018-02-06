@@ -1,5 +1,6 @@
 <template>
   <div class="container">
+    <infoPrompt class="prompt"></infoPrompt>
     <searchInput class="search"></searchInput>
     <div id="myChart" :style="{width: '800px', height: '550px'}"></div>
   </div>
@@ -7,35 +8,36 @@
 
 <script>
 import searchInput from './searchInput.vue'      //引入搜索框组件
+import infoPrompt from './infoPrompt.vue'      //引入搜索框组件
 import $ from 'jquery'         //引入jQuery
 
 export default {
   name : 'chart',
-  components: {searchInput},
+  components: {
+    searchInput,
+    infoPrompt
+  },
   data () {
     return {
-      data: {}
+      data: {},
+      url: __dirname+'./static/datas/test.json',
     }
   },
   computed: {
   },
   mounted(){
-    this.getDatas()         //获取要渲染的数据
+    this.getDatas(this.url)         //获取要渲染的数据
   },
   methods: {
-    getDatas(){
+    getDatas(url){
       var _this= this;
-      // this.$axios.get('http://localhost:8081/static/datas/test.json')      //异步获取数据并存储到组件的data中
-      this.$axios.get(__dirname+'./static/datas/test.json')      //异步获取数据并存储到组件的data中      
+      this.$axios.get(url)      //异步获取数据并存储到组件的data中      
                   .then(function (res){
-                    // _this.$store.state.data= res.data.charts
                     _this.data = res.data.charts
                     _this.drawchart()             //渲染图表 
                   })
     },
-
     drawchart(){
-      var _this = this
       let dataName = [];              //定义一个数组，用来存储数据中的name
       let enableName = [];             //定义一个数组，用于存放ignored为'ENABLE'的name
       let disableName = [];              //定义一个数组，用于存放ignored为'DISABLE'的name
@@ -46,7 +48,7 @@ export default {
       let eFlag = true                  //标记ignored为'ENABLE'的数据是否显示，“可控”图例是否被点击
       let dFlag = true                  //标记ignored为'DISABLE'的数据是否显示，“不可控”图例是否被点击
 
-      _this.data.forEach(element => {         //遍历数据，将数据分别存入满足条件的数组中
+      this.data.forEach(element => {         //遍历数据，将数据分别存入满足条件的数组中
         dataName.push(element.name)
         element.ignored === 'ENABLE'?(function(){
           enableName.push(element.name);
@@ -112,9 +114,82 @@ export default {
         ]
       }
       myChart.setOption(option)       //根据配置项渲染图表
-
+      
+      this.makingMove(myChart,this.data)
+      this.searchClick(myChart,this.data)
+      this.attributeChange(myChart,this.data,enableValue,disableValue,eFlag,dFlag)
+      this.legendChange(myChart,eFlag,dFlag,dataName,enableName,disableName,onlyEnableValue,onlyDisableValue,enableValue,disableValue)
+    },
+    makingMove(myChart,data){
+      myChart.on('click',function (params){
+      data.forEach(element => {
+          element.name == params.name?console.log(element.id):''         //打印id
+        });
+        var option = {
+          series:[{
+              name : "当前选择",
+              markLine: {
+              data: [{yAxis: ''+params.name}]                         //重新配置图表数据，重新渲染图表
+              }
+            }
+          ]}
+        myChart.setOption(option)
+      })
+    },
+    searchClick(myChart,data){
+      $('.autocomplete-suggestions').off('click').on('click',function (e){     //点击事件搜索功能 
+        let reg = /<strong>/g;
+        let reg1 = /<\/strong>/g;
+        let target = e.target||e.srcElement
+        let str = $(target).html();
+        let eValue=[] ;
+        let dValue=[] ;
+        let name = [];
+        let id;
+        
+        str = str.replace(reg, '');
+        str = str.replace(reg1, '');
+        
+        data.forEach(element => {
+            if (element.name == str) {
+                id = element.id;
+                console.log(id);
+                if (element.ignored == "ENABLE") {
+                    eValue.push(element.gains);
+                    dValue=[0]   
+                }else{
+                    dValue.push(element.gains);   
+                    eValue=[0]
+                }
+                name.push(str)
+            }
+        });
+        myChart.setOption({
+          xAxis: {
+            type: 'value'
+          },
+          yAxis: {
+            type: 'category',
+            triggerEvent: "true",
+            data: name
+          },
+          series: [{
+              data: eValue
+          },
+          {
+              data: dValue
+          },
+          {
+              markLine: {
+              data: [{yAxis: name}]
+              }
+          }]
+        })
+      })
+    },
+    attributeChange(myChart,data,enableValue,disableValue,eFlag,dFlag){
       myChart.on('click',function (params){           //改变可控不可控属性
-        _this.data.forEach(element => {
+        data.forEach(element => {
           if(element.name == params.value){             //点击后交换ignored的值
             element.ignored == 'ENABLE'?element.ignored = 'DISABLE':element.ignored = 'ENABLE'
             enableValue[(element.id % 2017111300 - 1)] = disableValue[(element.id % 2017111300 - 1)] - enableValue[(element.id % 2017111300 - 1)]
@@ -125,7 +200,7 @@ export default {
           }
         });
         if(eFlag == true&&dFlag == true){
-          option = {
+          var option = {
             series: [{
               data: enableValue
             },                                  //可控不可控数据均显示时，重新配置图表数据，重新渲染图表
@@ -136,24 +211,8 @@ export default {
           myChart.setOption(option)
         }
       })
-
-      myChart.on('click',function (params){       //标线的移动和id的显示
-        _this.data.forEach(element => {
-          element.name == params.name?console.log(element.id):''         //打印id
-        });
-        option = {
-          series:[{
-              name : "当前选择",
-              markLine: {
-              data: [{yAxis: ''+params.name}]                         //重新配置图表数据，重新渲染图表
-              }
-            }
-          ]
-        }
-        myChart.setOption(option)
-      })
-      // _this.move(myChart,_this.data)
-
+    },
+    legendChange(myChart,eFlag,dFlag,dataName,enableName,disableName,onlyEnableValue,onlyDisableValue,enableValue,disableValue){
       myChart.on('legendselectchanged',function (params){             //监听图例的改变
         if(params.name == '可控'){
           if(eFlag){
@@ -288,58 +347,7 @@ export default {
             myChart.setOption(option)
         }
       })
-
-      $('.autocomplete-suggestions').off('click').on('click',function (e){     //点击事件搜索功能 
-        let reg = /<strong>/g;
-        let reg1 = /<\/strong>/;
-        let data = null;
-        let target = e.target||e.srcElement
-        let str = $(target).html();
-        let eValue=[] ;
-        let dValue=[] ;
-        let name = [];
-        let id;
-        
-        str = str.replace(reg, '');
-        str = str.replace(reg1, '');
-        
-        _this.data.forEach(element => {
-            if (element.name == str) {
-                id = element.id;
-                console.log(id);
-                if (element.ignored == "ENABLE") {
-                    eValue.push(element.gains);
-                    dValue=[0]   
-                }else{
-                    dValue.push(element.gains);   
-                    eValue=[0]
-                }
-                name.push(str)
-            }
-        });
-        myChart.setOption({
-          xAxis: {
-            type: 'value'
-          },
-          yAxis: {
-            type: 'category',
-            triggerEvent: "true",
-            data: name
-          },
-          series: [{
-              data: eValue
-          },
-          {
-              data: dValue
-          },
-          {
-              markLine: {
-              data: [{yAxis: name}]
-              }
-          }]
-        })
-      })
-    },
+    }
   }
 }
 </script>

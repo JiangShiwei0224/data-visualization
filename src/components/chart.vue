@@ -25,9 +25,10 @@ export default {
   methods: {
     getDatas(){
       var _this= this;
-      this.$axios.get('http://localhost:8081/static/datas/test.json')      //异步获取数据并存储到组件的data中
+      // this.$axios.get('http://localhost:8081/static/datas/test.json')      //异步获取数据并存储到组件的data中
+      this.$axios.get(__dirname+'./static/datas/test.json')      //异步获取数据并存储到组件的data中      
                   .then(function (res){
-                    _this.$store.state.data= res.data.charts
+                    // _this.$store.state.data= res.data.charts
                     _this.data = res.data.charts
                     _this.drawchart()             //渲染图表 
                   })
@@ -151,6 +152,7 @@ export default {
         }
         myChart.setOption(option)
       })
+      // _this.move(myChart,_this.data)
 
       myChart.on('legendselectchanged',function (params){             //监听图例的改变
         if(params.name == '可控'){
@@ -287,10 +289,10 @@ export default {
         }
       })
 
-      $('.autocomplete-suggestions').off('click').on('click',function (e){     //点击事件搜索功能
+      $('.autocomplete-suggestions').off('click').on('click',function (e){     //点击事件搜索功能 
         let reg = /<strong>/g;
         let reg1 = /<\/strong>/;
-        let data = _this.$store.state.data;
+        let data = null;
         let target = e.target||e.srcElement
         let str = $(target).html();
         let eValue=[] ;
@@ -337,7 +339,7 @@ export default {
           }]
         })
       })
-    }
+    },
   }
 }
 </script>

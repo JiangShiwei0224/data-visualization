@@ -4,8 +4,6 @@ const utils = require('./utils')
 const config = require('../config')
 const vueLoaderConfig = require('./vue-loader.conf')
 
-var webpack = require("webpack")
-
 function resolve (dir) {
   return path.join(__dirname, '..', dir)
 }
@@ -67,14 +65,7 @@ module.exports = {
           name: utils.assetsPath('fonts/[name].[hash:7].[ext]')
         }
       }
-    ],
-    plugins: [
-      new webpack.optimize.CommonsChunkPlugin('common.js'),
-      new webpack.ProvidePlugin({
-          jQuery: "jquery",
-          $: "jquery"
-      })
-     ]
+    ]
   },
   node: {
     // prevent webpack from injecting useless setImmediate polyfill because Vue

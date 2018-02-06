@@ -1,7 +1,7 @@
 {
-  "name": "data-visualization",
+  "name": "dv",
   "version": "1.0.0",
-  "description": "Web front-end data visualization",
+  "description": "A Vue.js project",
   "author": "jiangshiwei <1041973077@qq.com>",
   "private": true,
   "scripts": {
@@ -12,10 +12,9 @@
   "dependencies": {
     "axios": "^0.17.1",
     "echarts": "^4.0.2",
+    "jquery": "^3.3.1",
     "vue": "^2.5.2",
-    "vue-router": "^3.0.1",
-    "vuex": "^3.0.1",
-    "jquery": "^2.2.3"
+    "vue-router": "^3.0.1"
   },
   "devDependencies": {
     "autoprefixer": "^7.1.2",
